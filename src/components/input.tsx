@@ -1,8 +1,20 @@
-export default function Input(props:any) {
+import { title } from "process";
+
+interface InputGroupProps extends React.ComponentPropsWithoutRef<"input"> {
+  name: string;
+  register: Function;
+  title: string
+}
+
+export default function Input({ name, title, register, ...rest }: InputGroupProps) {
   return (
-    <input
-      {...props}
-      className="w-full h-16 bg-zinc-700 p-4 font-medium text-zinc-300 rounded-md"
-    />
+    <>
+      <label className="text-left h-3 text-zinc-100" htmlFor={name}>{title}</label>
+      <input
+        {...rest}
+        {...register(name)}
+        className="w-full h-16 bg-zinc-700 p-4 font-medium text-zinc-300 rounded-md"
+      />
+    </>
   );
 }

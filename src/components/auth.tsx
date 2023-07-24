@@ -1,45 +1,80 @@
 "use client";
 
 import Input from "@/components/input";
-import { data } from "autoprefixer";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import ErrorSpan from "@/components/errorSpan";
+import { useContext, useState } from "react";
+import { DevTool } from "@hookform/devtools";
+import { useForm, FormProvider, useFormContext } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthContext } from "@/contexts/AuthContext";
+
+const createUserFormSchema = z.object({
+  email: z
+    .string()
+    .nonempty("O email é obrigatorio!")
+    .email("O email é invalido!")
+    .toLowerCase(),
+  password: z.string().min(6, "A senha precisa de no minimo 6 caracteres"),
+});
+
+type CreateUserFormData = z.infer<typeof createUserFormSchema>;
 
 export default function Auth() {
-  const [signIn, setSignIn] = useState(true);
-  const { register, handleSubmit } = useForm();
+  const [signUpScreen, setSignUpScreen] = useState(true);
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserFormSchema),
+  });
 
-  function handleSignIn(data) {
-    console.log(data)
+  console.log(errors, "ERROS");
+
+  const { signUp } = useContext(AuthContext);
+  
+  async function createUser(data: any) {
+    await signUp(data)
   }
 
   return (
     <>
-      {signIn ? (
+      {signUpScreen ? (
         <div className="font-base m-auto text-center grid grid-cols-1 gap-4 content-start justify-items-start h-[700px] w-[500px] backdrop-blur-md shadow-black rounded-md shadow-2xl bg-zinc-950/75 p-16">
           <h1 className="font-bold text-3xl">Entrar</h1>
-          <form action="POST" className="flex flex-col w-full gap-4" onSubmit={handleSubmit(handleSignIn)}>
+          <form
+            className="flex flex-col w-full gap-4"
+            onSubmit={handleSubmit(createUser)}
+          >
             <Input
-              {...register("email")}
-              id="email-address"
               name="email"
-              autoComplete="email"
+              title="E-mail"
+              register={register}
               required
               type="email"
               placeholder="Digite seu e-mail."
             />
+            {errors.email && <ErrorSpan errorText={errors.email.message} />}
+
             <Input
-              {...register("password")}
-              id="password-address"
               name="password"
-              autoComplete="password"
+              title="Senha"
+              register={register}
               required
               type="password"
               placeholder="Digite sua senha"
             />
+            {errors.password && (
+              <ErrorSpan errorText={errors.password.message} />
+            )}
 
             <div className="w-full mt-4 gap-2 flex flex-col">
-              <button className="h-16 bg-red-700 hover:bg-red-600 transition-colors p-2 flex justify-center items-center w-full text-zinc-200 font-bold text-lg rounded-md">
+              <button
+                type="submit"
+                className="h-16 bg-red-700 hover:bg-red-600 transition-colors p-2 flex justify-center items-center w-full text-zinc-200 font-bold text-lg rounded-md"
+              >
                 Entrar
               </button>
               <div className="flex justify-between mt-4">
@@ -53,11 +88,12 @@ export default function Auth() {
               </div>
             </div>
           </form>
+
           <h4 className="m-auto mt-4">
             Novo no nextflix?{" "}
             <a
               className="font-bold cursor-pointer"
-              onClick={() => setSignIn(false)}
+              onClick={() => setSignUpScreen(false)}
             >
               Crie uma conta agora!
             </a>
@@ -66,34 +102,41 @@ export default function Auth() {
       ) : (
         <div className="font-base m-auto text-center grid grid-cols-1 gap-4 content-start justify-items-start h-[700px] w-[500px] backdrop-blur-md shadow-black rounded-md shadow-2xl bg-zinc-950/75 p-16">
           <h1 className="font-bold text-3xl">Criar Conta</h1>
-          <form action="POST" className="flex flex-col w-full gap-4">
+          <form
+            className="flex flex-col w-full gap-4"
+            onSubmit={handleSubmit(createUser)}
+          >
             <Input
-              {...register("email")}
-              id="email-address"
               name="email"
-              autoComplete="email"
+              title="E-mail"
+              register={register}
               required
               type="email"
               placeholder="Digite seu e-mail."
             />
+            {errors.email && <ErrorSpan errorText={errors.email.message} />}
             <Input
-              {...register("password")}
-              id="password"
               name="password"
-              autoComplete="password"
+              title="Senha"
+              register={register}
               required
               type="password"
               placeholder="Digite sua senha"
             />
+            {errors.password && (
+              <ErrorSpan errorText={errors.password.message} />
+            )}
             <Input
-              {...register("repeat-password")}
-              id="repeat-password"
               name="repeat-password"
-              autoComplete="password"
+              title="Repita sua senha"
+              register={register}
               required
               type="password"
               placeholder="Digite sua senha novamente"
             />
+            {errors.password && (
+              <ErrorSpan errorText={errors.password.message} />
+            )}
 
             <div className="w-full mt-4 gap-2 flex flex-col">
               <button className="h-16 bg-red-700 hover:bg-red-600 transition-colors p-2 flex justify-center items-center w-full text-zinc-200 font-bold text-lg rounded-md">
@@ -114,13 +157,14 @@ export default function Auth() {
             Já tem uma conta nextflix?{" "}
             <a
               className="font-bold cursor-pointer"
-              onClick={() => setSignIn(true)}
+              onClick={() => setSignUpScreen(true)}
             >
               Entre na sua conta agora!
             </a>
           </h4>
         </div>
       )}
+      <DevTool control={control} />
     </>
   );
 }

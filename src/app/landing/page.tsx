@@ -6,7 +6,6 @@ import Background from "../assets/imgs/background.jpg";
 import "./globals.css";
 import { redirect } from "next/dist/server/api-utils";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function Home() {
   const router = useRouter();
