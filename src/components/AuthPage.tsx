@@ -1,15 +1,16 @@
 "use client";
 
-import Input from "@/components/input";
-import ErrorSpan from "@/components/errorSpan";
+import Input from "@/components/Input";
+import ErrorSpan from "@/components/ErrorSpan";
 import { useContext, useState } from "react";
-import { DevTool } from "@hookform/devtools";
-import { useForm, FormProvider, useFormContext } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthContext } from "@/contexts/AuthContext";
+import { BsCheck as CheckedIcon } from "react-icons/bs";
+import * as Checkbox from "@radix-ui/react-checkbox";
 
-const createUserFormSchema = z.object({
+const enterUserFormSchema = z.object({
   email: z
     .string()
     .nonempty("O email é obrigatorio!")
@@ -18,34 +19,53 @@ const createUserFormSchema = z.object({
   password: z.string().min(6, "A senha precisa de no minimo 6 caracteres"),
 });
 
+type EnterUserFormData = z.infer<typeof enterUserFormSchema>;
+
+const createUserFormSchema = z
+  .object({
+    email: z
+      .string()
+      .nonempty("O email é obrigatorio!")
+      .email("O email é invalido!")
+      .toLowerCase(),
+    password: z.string().min(6, "A senha precisa de no minimo 6 caracteres"),
+    confirmPassword: z.string(),
+  })
+  .refine((fields) => fields.password == fields.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "As senhas precisam ser iguais",
+  });
+
 type CreateUserFormData = z.infer<typeof createUserFormSchema>;
 
 export default function Auth() {
-  const [signUpScreen, setSignUpScreen] = useState(true);
+  const [signInScreen, setSignInScreen] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const formSchema = signInScreen ? enterUserFormSchema : createUserFormSchema;
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
   } = useForm<CreateUserFormData>({
-    resolver: zodResolver(createUserFormSchema),
+    resolver: zodResolver(formSchema),
   });
 
   console.log(errors, "ERROS");
 
   const { signUp } = useContext(AuthContext);
-  
+
   async function createUser(data: any) {
-    await signUp(data)
+    await signUp(data);
   }
 
   return (
-    <>
-      {signUpScreen ? (
+    <>       
+      {signInScreen ? (
         <div className="font-base m-auto text-center grid grid-cols-1 gap-4 content-start justify-items-start h-[700px] w-[500px] backdrop-blur-md shadow-black rounded-md shadow-2xl bg-zinc-950/75 p-16">
           <h1 className="font-bold text-3xl">Entrar</h1>
           <form
-            className="flex flex-col w-full gap-4"
+            className="flex flex-col w-full gap-2"
             onSubmit={handleSubmit(createUser)}
           >
             <Input
@@ -55,6 +75,7 @@ export default function Auth() {
               required
               type="email"
               placeholder="Digite seu e-mail."
+              hasError={errors.email ? true : false}
             />
             {errors.email && <ErrorSpan errorText={errors.email.message} />}
 
@@ -65,6 +86,7 @@ export default function Auth() {
               required
               type="password"
               placeholder="Digite sua senha"
+              hasError={errors.password ? true : false}
             />
             {errors.password && (
               <ErrorSpan errorText={errors.password.message} />
@@ -79,7 +101,19 @@ export default function Auth() {
               </button>
               <div className="flex justify-between mt-4">
                 <div className="flex gap-2">
-                  <input type="checkbox" />
+                  <Checkbox.Root
+                    className="w-4 h-4 bg-zinc-50 flex self-center rounded-[4px]"
+                    defaultChecked
+                    id="c1"
+                    checked={checked}
+                    onCheckedChange={() => {
+                      setChecked(!checked);
+                    }}
+                  >
+                    <Checkbox.Indicator className="text-zinc-900">
+                      <CheckedIcon />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
                   <label htmlFor="rememberMe">Lembre de mim</label>
                 </div>
                 <a href="/" className="font-bold">
@@ -93,17 +127,17 @@ export default function Auth() {
             Novo no nextflix?{" "}
             <a
               className="font-bold cursor-pointer"
-              onClick={() => setSignUpScreen(false)}
+              onClick={() => setSignInScreen(false)}
             >
               Crie uma conta agora!
             </a>
           </h4>
         </div>
       ) : (
-        <div className="font-base m-auto text-center grid grid-cols-1 gap-4 content-start justify-items-start h-[700px] w-[500px] backdrop-blur-md shadow-black rounded-md shadow-2xl bg-zinc-950/75 p-16">
+        <div className="font-base m-auto text-center grid grid-cols-1 gap-1 content-start justify-items-start h-[700px] w-[500px] backdrop-blur-md shadow-black rounded-md shadow-2xl bg-zinc-950/75 p-16">
           <h1 className="font-bold text-3xl">Criar Conta</h1>
           <form
-            className="flex flex-col w-full gap-4"
+            className="flex flex-col w-full gap-2"
             onSubmit={handleSubmit(createUser)}
           >
             <Input
@@ -113,6 +147,7 @@ export default function Auth() {
               required
               type="email"
               placeholder="Digite seu e-mail."
+              hasError={errors.email ? true : false}
             />
             {errors.email && <ErrorSpan errorText={errors.email.message} />}
             <Input
@@ -122,29 +157,43 @@ export default function Auth() {
               required
               type="password"
               placeholder="Digite sua senha"
+              hasError={errors.password ? true : false}
             />
             {errors.password && (
               <ErrorSpan errorText={errors.password.message} />
             )}
             <Input
-              name="repeat-password"
-              title="Repita sua senha"
+              name="confirmPassword"
+              title="Confirme sua senha"
               register={register}
               required
               type="password"
               placeholder="Digite sua senha novamente"
+              hasError={errors.confirmPassword ? true : false}
             />
-            {errors.password && (
-              <ErrorSpan errorText={errors.password.message} />
+            {errors.confirmPassword && (
+              <ErrorSpan errorText={errors.confirmPassword.message} />
             )}
 
-            <div className="w-full mt-4 gap-2 flex flex-col">
+            <div className="w-full mt-2 gap-1 flex flex-col">
               <button className="h-16 bg-red-700 hover:bg-red-600 transition-colors p-2 flex justify-center items-center w-full text-zinc-200 font-bold text-lg rounded-md">
                 Criar conta
               </button>
-              <div className="flex justify-between mt-4">
+              <div className="flex justify-between mt-2">
                 <div className="flex gap-2">
-                  <input type="checkbox" />
+                  <Checkbox.Root
+                    className="w-4 h-4 bg-zinc-50 flex self-center rounded-[4px]"
+                    defaultChecked
+                    id="c1"
+                    checked={checked}
+                    onCheckedChange={() => {
+                      setChecked(!checked);
+                    }}
+                  >
+                    <Checkbox.Indicator className="text-zinc-900">
+                      <CheckedIcon />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
                   <label htmlFor="rememberMe">Lembre de mim</label>
                 </div>
                 <a href="/" className="font-bold">
@@ -153,18 +202,17 @@ export default function Auth() {
               </div>
             </div>
           </form>
-          <h4 className="m-auto mt-4">
+          <h3 className="mt-3 text-sm">
             Já tem uma conta nextflix?{" "}
             <a
               className="font-bold cursor-pointer"
-              onClick={() => setSignUpScreen(true)}
+              onClick={() => setSignInScreen(true)}
             >
               Entre na sua conta agora!
             </a>
-          </h4>
+          </h3>
         </div>
       )}
-      <DevTool control={control} />
     </>
   );
 }

@@ -51,7 +51,7 @@ export function AuthProvider({ children }: Props) {
 
     setUser(user);
 
-    // router.push("/dashboard");
+    router.push("/home");
   }
 
   return (
